@@ -1,0 +1,19 @@
+{
+  "name": "redbus test",
+  "version": "1.0.0",
+  "description": "Playwright test doing on redbus.in",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "test:smoke": "npx playwright test --grep @smoke",
+    "test:regression": "npx playwright test --grep @regression",
+    "report": "npx playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^20.12.7",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.4.5"
+  }
+}
