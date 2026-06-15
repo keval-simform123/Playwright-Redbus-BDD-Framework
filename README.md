@@ -1,4 +1,4 @@
-# RedBus Playwright Test Suite
+# RedBus Playwright Automation with Typescript
 
 A Playwright + TypeScript test project for automating the RedBus website (`https://www.redbus.in`) as a part of the Final Assignment of Playwright Training.
 
