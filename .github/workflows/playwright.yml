@@ -81,13 +81,13 @@ jobs:
           
           if [ "${{ job.status }}" = "success" ]; then
             COLOR="#36a64f"
-            STATUS_TEXT="✅ Playwright Tests Passed"
+            STATUS_TEXT="Playwright Tests Passed"
           elif [ "${{ job.status }}" = "failure" ]; then
             COLOR="#ec5e5e"
-            STATUS_TEXT="❌ Playwright Tests Failed"
+            STATUS_TEXT=" Playwright Tests Failed"
           else
             COLOR="#aaaaaa"
-            STATUS_TEXT="⚠️ Playwright Tests Cancelled/Warn"
+            STATUS_TEXT="Playwright Tests Cancelled/Warn"
           fi
           
           jq -n \
