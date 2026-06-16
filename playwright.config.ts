@@ -16,6 +16,7 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    [require.resolve('./utils/slackReporter')],
   ],
   use: {
     baseURL: process.env.BASE_URL,

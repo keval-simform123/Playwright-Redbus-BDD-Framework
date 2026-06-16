@@ -5,13 +5,30 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   test:
     name: Run Playwright Tests
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Root@123
+          MYSQL_DATABASE: playwright_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     env: 
       BASE_URL: ${{ secrets.BASE_URL }}
+      DB_HOST: localhost
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: Root@123
+      DB_NAME: playwright_db
       
     timeout-minutes: 30
 
@@ -50,3 +67,87 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 7
+
+      - name: Send Slack Notification
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "Slack Webhook URL is not set. Skipping notification."
+            exit 0
+          fi
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            COLOR="#36a64f"
+            STATUS_TEXT="✅ Playwright Tests Passed"
+          elif [ "${{ job.status }}" = "failure" ]; then
+            COLOR="#ec5e5e"
+            STATUS_TEXT="❌ Playwright Tests Failed"
+          else
+            COLOR="#aaaaaa"
+            STATUS_TEXT="⚠️ Playwright Tests Cancelled/Warn"
+          fi
+          
+          jq -n \
+            --arg color "$COLOR" \
+            --arg title "$STATUS_TEXT" \
+            --arg repo "${{ github.repository }}" \
+            --arg branch "${{ github.ref_name }}" \
+            --arg commit_url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            --arg commit_sha "$(echo ${{ github.sha }} | cut -c1-7)" \
+            --arg author "${{ github.actor }}" \
+            --arg run_url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg msg "$COMMIT_MSG" \
+            '{
+              attachments: [
+                {
+                  color: $color,
+                  blocks: [
+                    {
+                      type: "header",
+                      text: {
+                        type: "plain_text",
+                        text: $title,
+                        emoji: true
+                      }
+                    },
+                    {
+                      type: "section",
+                      fields: [
+                        { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
+                        { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
+                        { type: "mrkdwn", text: ("*Commit:*\n<" + $commit_url + "|" + $commit_sha + ">") },
+                        { type: "mrkdwn", text: ("*Author:*\n" + $author) },
+                        { type: "mrkdwn", text: ("*HTML Report:*\n<" + $run_url + "#artifacts|Download HTML Report>") }
+                      ]
+                    },
+                    {
+                      type: "section",
+                      text: {
+                        type: "mrkdwn",
+                        text: ("*Commit Message:*\n`" + $msg + "`")
+                      }
+                    },
+                    {
+                      type: "actions",
+                      elements: [
+                        {
+                          type: "button",
+                          text: {
+                            type: "plain_text",
+                            text: "View Workflow Run 📋",
+                            emoji: true
+                          },
+                          url: $run_url
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }' > payload.json
+          
+          curl -X POST -H "Content-type: application/json" -d @payload.json "$SLACK_WEBHOOK_URL"
+
