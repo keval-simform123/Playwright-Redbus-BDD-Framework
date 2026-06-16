@@ -8,6 +8,9 @@ export class HomePage extends BasePage {
   readonly toCityInput: Locator;
   readonly searchButton: Locator;
   readonly datePicker: Locator;
+  readonly accountButton: Locator;
+  readonly loginButton: Locator;
+  readonly mobileInput: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -15,6 +18,34 @@ export class HomePage extends BasePage {
     this.toCityInput = page.locator('div').filter({ hasText: /^To$/ }).first();
     this.searchButton = page.getByRole('button', { name: 'Search buses' });
     this.datePicker = page.getByRole('combobox', { name: 'Select Date of Journey.' });
+    this.accountButton = page.locator('#signin_dd, button:has-text("Account"), #profile_action_menu').first();
+    this.loginButton = page.locator('button:has-text("Log in"), li:has-text("Log in"), #hc').first();
+    this.mobileInput = page.locator('input#mobileNoInp, input[class*="inputFieldMobile"]').first();
+  }
+
+  // Account and Login actions
+  async clickAccount() {
+    await this.accountButton.waitFor({ state: 'visible', timeout: 15000 });
+    await this.accountButton.click();
+  }
+
+  async clickLogin() {
+    await this.loginButton.waitFor({ state: 'visible', timeout: 15000 });
+    await this.loginButton.click();
+  }
+
+  async isLoginModalVisible(): Promise<boolean> {
+    try {
+      // 1. Check if the login modal container or heading is visible first
+      const header = this.page.getByText('Login to get exciting offers').first();
+      await header.waitFor({ state: 'visible', timeout: 10000 });
+      
+      // 2. Wait for the mobile input field to be visible
+      await this.mobileInput.waitFor({ state: 'visible', timeout: 10000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // actions
