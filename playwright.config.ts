@@ -30,11 +30,13 @@ export default defineConfig({
   expect: {
     timeout: 10000,
   },
-  // run tests in firefox
   projects: [
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { 
+        ...devices['Desktop Firefox'],
+        storageState: './playwright/.auth/session.json',
+      },
     },
   ],
   outputDir: 'test-results/',

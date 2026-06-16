@@ -16,53 +16,70 @@ test.describe('Unified End-to-End Booking Flow with Authentication', () => {
     console.log(`[E2E Flow] Navigating to ${baseURL}...`);
     await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
 
-    // 2. Click on Account
-    console.log('[E2E Flow] Clicking on Account...');
+    // 2. Click on Account to check if we are already logged in
+    console.log('[E2E Flow] Clicking on Account to check login status...');
     await homePage.clickAccount();
 
-    // 3. Click on Login
-    console.log('[E2E Flow] Clicking on Log in...');
-    await homePage.clickLogin();
-
-    // 4. Verify login dialog appears
-    console.log('[E2E Flow] Verifying login modal is visible...');
-    const mobileInput = page.locator('input#mobileNoInp, input[class*="inputFieldMobile"]').first();
-    await mobileInput.waitFor({ state: 'visible', timeout: 20000 });
-    console.log('[E2E Flow] Login dialog is now visible.');
-
-    // Wait for manual login input and OTP completion
-    console.log('\n==================================================================');
-    console.log('[E2E Flow] ACTION REQUIRED:');
-    console.log('  1. Please enter your mobile number in the headed browser.');
-    console.log('  2. Complete the captcha / OTP verification manually.');
-    console.log('  3. The test will automatically resume once you are logged in (dialog closes).');
-    console.log('==================================================================\n');
-
-    // Wait until the entire login overlay/backdrop disappears (up to 4 minutes / 240000ms)
-    const loginOverlay = page.locator('div[class*="bottomSheetOverlay"]').first();
-    await loginOverlay.waitFor({ state: 'hidden', timeout: 240000 });
-    console.log('[E2E Flow] Login dialog and overlay closed successfully! Continuing...');
-
-    // Verify successful login by checking that the "Log in" button is no longer present in the Account menu
-    console.log('[E2E Flow] Verifying logged-in status...');
-    await homePage.clickAccount();
-    const loginButtonInDrawer = page.locator('button:has-text("Log in"), li:has-text("Log in")').first();
-    
-    let isStillLoggedOut = false;
+    const loginButtonInDrawer = page.locator('button:has-text("Log in"), li:has-text("Log in"), #signInLink').first();
+    let isAlreadyLoggedIn = false;
     try {
+      // Check if the "Log in" button is present. If it's not visible, we are already logged in.
       await loginButtonInDrawer.waitFor({ state: 'visible', timeout: 5000 });
-      isStillLoggedOut = true;
+      isAlreadyLoggedIn = false;
     } catch {
-      isStillLoggedOut = false;
+      isAlreadyLoggedIn = true;
     }
 
-    if (isStillLoggedOut) {
-      throw new Error('Login verification failed: The "Log in" button is still visible in the Account drawer. Please ensure you entered the correct OTP.');
-    }
-    console.log('[E2E Flow] Login successfully verified! Continuing to capture storage state...');
+    if (isAlreadyLoggedIn) {
+      console.log('[E2E Flow] Session is already active (already logged in). Skipping manual authentication steps.');
+      // Close the Account menu so it doesn't cover elements on the homepage
+      await page.keyboard.press('Escape');
+    } else {
+      console.log('[E2E Flow] Not logged in. Starting manual login flow...');
+      
+      // 3. Click on Login
+      console.log('[E2E Flow] Clicking on Log in...');
+      await homePage.clickLogin();
 
-    // Close the Account menu so it doesn't cover elements on the homepage
-    await page.keyboard.press('Escape');
+      // 4. Verify login dialog appears
+      console.log('[E2E Flow] Verifying login modal is visible...');
+      const mobileInput = page.locator('input#mobileNoInp, input[class*="inputFieldMobile"]').first();
+      await mobileInput.waitFor({ state: 'visible', timeout: 20000 });
+      console.log('[E2E Flow] Login dialog is now visible.');
+
+      // Wait for manual login input and OTP completion
+      console.log('\n==================================================================');
+      console.log('[E2E Flow] ACTION REQUIRED:');
+      console.log('  1. Please enter your mobile number in the headed browser.');
+      console.log('  2. Complete the captcha / OTP verification manually.');
+      console.log('  3. The test will automatically resume once you are logged in (dialog closes).');
+      console.log('==================================================================\n');
+
+      // Wait until the entire login overlay/backdrop disappears (up to 4 minutes / 240000ms)
+      const loginOverlay = page.locator('div[class*="bottomSheetOverlay"]').first();
+      await loginOverlay.waitFor({ state: 'hidden', timeout: 240000 });
+      console.log('[E2E Flow] Login dialog and overlay closed successfully! Continuing...');
+
+      // Verify successful login by checking that the "Log in" button is no longer present in the Account menu
+      console.log('[E2E Flow] Verifying logged-in status...');
+      await homePage.clickAccount();
+      
+      let isStillLoggedOut = false;
+      try {
+        await loginButtonInDrawer.waitFor({ state: 'visible', timeout: 5000 });
+        isStillLoggedOut = true;
+      } catch {
+        isStillLoggedOut = false;
+      }
+
+      if (isStillLoggedOut) {
+        throw new Error('Login verification failed: The "Log in" button is still visible in the Account drawer. Please ensure you entered the correct OTP.');
+      }
+      console.log('[E2E Flow] Login successfully verified! Continuing to capture storage state...');
+
+      // Close the Account menu so it doesn't cover elements on the homepage
+      await page.keyboard.press('Escape');
+    }
 
     // 5. Save the baseline storage state (auth setup)
     console.log('[E2E Flow] Capturing browser context storage state...');
