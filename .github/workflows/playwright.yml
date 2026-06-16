@@ -119,8 +119,7 @@ jobs:
                         { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
                         { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
                         { type: "mrkdwn", text: ("*Commit:*\n<" + $commit_url + "|" + $commit_sha + ">") },
-                        { type: "mrkdwn", text: ("*Author:*\n" + $author) },
-                        { type: "mrkdwn", text: ("*HTML Report:*\n<" + $run_url + "#artifacts|Download HTML Report>") }
+                        { type: "mrkdwn", text: ("*Author:*\n" + $author) }
                       ]
                     },
                     {
