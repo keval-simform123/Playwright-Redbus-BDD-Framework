@@ -2,7 +2,6 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Ensure env variables are loaded from the root .env
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const dbConfig = {
@@ -18,7 +17,7 @@ let pool: mysql.Pool | null = null;
 async function getPool(): Promise<mysql.Pool> {
   if (pool) return pool;
 
-  // 1. First ensure the database exists by connecting to MySQL without db name specified
+  // ensure database exists
   const connection = await mysql.createConnection({
     host: dbConfig.host,
     port: dbConfig.port,
@@ -27,16 +26,16 @@ async function getPool(): Promise<mysql.Pool> {
   });
 
   try {
-    console.log(`[Database] Ensuring database "${dbConfig.database}" exists...`);
+    console.log(`[DB] Ensuring database "${dbConfig.database}" exists...`);
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbConfig.database}\`;`);
   } catch (error) {
-    console.error('[Database] Failed to ensure database exists:', error);
+    console.error('[DB] Failed to create database:', error);
     throw error;
   } finally {
     await connection.end();
   }
 
-  // 2. Create the connection pool with the database specified
+  // create connection pool
   pool = mysql.createPool({
     host: dbConfig.host,
     port: dbConfig.port,
@@ -48,9 +47,9 @@ async function getPool(): Promise<mysql.Pool> {
     queueLimit: 0,
   });
 
-  // 3. Ensure the sessions table exists
+  // ensure sessions table exists
   try {
-    console.log('[Database] Ensuring table "playwright_sessions" exists...');
+    console.log('[DB] Ensuring sessions table exists...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS playwright_sessions (
         id VARCHAR(255) PRIMARY KEY,
@@ -59,64 +58,52 @@ async function getPool(): Promise<mysql.Pool> {
       );
     `);
   } catch (error) {
-    console.error('[Database] Failed to ensure table exists:', error);
+    console.error('[DB] Failed to create table:', error);
     throw error;
   }
 
   return pool;
 }
 
-/**
- * Saves a session's raw JSON data under a key.
- */
 export async function saveSession(id: string, sessionData: string): Promise<void> {
   const activePool = await getPool();
-  console.log(`[Database] Saving session "${id}" to database...`);
+  console.log(`[DB] Saving session "${id}"...`);
   await activePool.query(
     `INSERT INTO playwright_sessions (id, session_data) 
      VALUES (?, ?) 
      ON DUPLICATE KEY UPDATE session_data = VALUES(session_data);`,
     [id, sessionData]
   );
-  console.log(`[Database] Session "${id}" saved successfully.`);
+  console.log(`[DB] Session "${id}" saved.`);
 }
 
-/**
- * Retrieves a session's raw JSON data by key.
- */
 export async function getSession(id: string): Promise<string | null> {
   const activePool = await getPool();
-  console.log(`[Database] Retrieving session "${id}" from database...`);
+  console.log(`[DB] Fetching session "${id}"...`);
   const [rows] = await activePool.query<any>(
     'SELECT session_data FROM playwright_sessions WHERE id = ?;',
     [id]
   );
   if (rows && rows.length > 0) {
-    console.log(`[Database] Session "${id}" retrieved successfully.`);
+    console.log(`[DB] Session "${id}" found.`);
     return rows[0].session_data;
   }
-  console.log(`[Database] Session "${id}" not found in database.`);
+  console.log(`[DB] Session "${id}" not found.`);
   return null;
 }
 
-/**
- * Deletes a session by key.
- */
 export async function deleteSession(id: string): Promise<void> {
   const activePool = await getPool();
-  console.log(`[Database] Deleting session "${id}" from database...`);
+  console.log(`[DB] Deleting session "${id}"...`);
   await activePool.query('DELETE FROM playwright_sessions WHERE id = ?;', [id]);
-  console.log(`[Database] Session "${id}" deleted successfully.`);
+  console.log(`[DB] Session "${id}" deleted.`);
 }
 
-/**
- * Closes the database pool.
- */
 export async function closePool(): Promise<void> {
   if (pool) {
-    console.log('[Database] Closing database connection pool...');
+    console.log('[DB] Closing connection pool...');
     await pool.end();
     pool = null;
-    console.log('[Database] Connection pool closed.');
+    console.log('[DB] Pool closed.');
   }
 }

@@ -5,13 +5,12 @@ import path from 'path';
 const SESSION_FILE = path.join(__dirname, 'playwright/.auth/session.json');
 
 async function globalTeardown(config: FullConfig) {
-  console.log('\n[Global Teardown] Cleaning up after test suite...');
-  // delete sessions
+  console.log('\n[Teardown] Cleaning up...');
   if (fs.existsSync(SESSION_FILE)) {
     fs.unlinkSync(SESSION_FILE);
-    console.log('[Global Teardown] Session file removed.');
+    console.log('[Teardown] Session file removed.');
   }
-  console.log('[Global Teardown] All done. Check playwright-report/ for the HTML report.\n');
+  console.log('[Teardown] Done. Check playwright-report/ for results.\n');
 }
 
 export default globalTeardown;

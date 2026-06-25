@@ -11,9 +11,7 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@pages/*": ["pages/*"],
-      "@fixtures/*": ["fixtures/*"],
-      "@test-data/*": ["test-data/*"]
+      "@pages/*": ["pages/*"]
     }
   },
   "include": [

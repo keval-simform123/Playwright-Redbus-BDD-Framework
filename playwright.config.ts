@@ -1,12 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
+import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// load env vars from .env
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+// maps feature files to step definitions
+const testDir = defineBddConfig({
+  features: 'features/booking_flow.feature',
+  steps: ['steps/**/*.steps.ts', 'steps/fixtures.ts'],
+});
+
 export default defineConfig({
-  testDir: './tests',
+  testDir,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -16,6 +22,7 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    cucumberReporter('html', { outputFile: 'playwright-report/cucumber-report.html' }),
     [require.resolve('./utils/slackReporter')],
   ],
   use: {
@@ -26,7 +33,7 @@ export default defineConfig({
     navigationTimeout: 30000,
     actionTimeout: 10000,
   },
-  timeout: 120000,
+  timeout: 300000,
   expect: {
     timeout: 10000,
   },

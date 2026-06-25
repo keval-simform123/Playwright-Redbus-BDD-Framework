@@ -1,19 +1,24 @@
 {
-  "name": "redbus test",
-  "version": "1.0.0",
-  "description": "Playwright test doing on redbus.in",
+  "name": "redbus-bdd-test",
+  "version": "2.0.0",
+  "description": "Playwright BDD tests for redbus.in using Gherkin feature files",
   "scripts": {
-    "test": "npx playwright test",
-    "test:headed": "npx playwright test --headed",
-    "test:ui": "npx playwright test --ui",
-    "test:smoke": "npx playwright test --grep @smoke",
-    "test:regression": "npx playwright test --grep @regression",
+    "bddgen": "npx bddgen",
+    "test": "npx bddgen && npx playwright test",
+    "test:headed": "npx bddgen && npx playwright test --headed",
+    "test:ui": "npx bddgen && npx playwright test --ui",
+    "test:smoke": "npx bddgen && npx playwright test --grep @smoke",
+    "test:regression": "npx bddgen && npx playwright test --grep @regression",
+    "test:e2e": "npx bddgen && npx playwright test --grep @e2e",
+    "test:booking": "npx bddgen && npx playwright test --grep @booking-flow",
     "report": "npx playwright show-report"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^10.8.0",
     "@playwright/test": "^1.44.0",
     "@types/node": "^20.12.7",
     "dotenv": "^16.4.5",
+    "playwright-bdd": "^9.2.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {

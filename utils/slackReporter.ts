@@ -3,24 +3,23 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { execSync } from 'child_process';
 
-// Load env variables
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 class SlackReporter implements Reporter {
   async onEnd(result: FullResult) {
-    // Skip if running inside GitHub Actions CI environment
+    // skip in CI — GitHub Actions has its own reporter
     if (process.env.GITHUB_ACTIONS === 'true') {
-      console.log('[Slack Reporter] Running in CI. Skipping local Slack reporter.');
+      console.log('[Slack] Skipping in CI environment.');
       return;
     }
 
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
     if (!webhookUrl) {
-      console.log('[Slack Reporter] SLACK_WEBHOOK_URL is not set. Skipping Slack notification for this run.');
+      console.log('[Slack] No webhook URL set, skipping.');
       return;
     }
 
-    const status = result.status; // 'passed' | 'failed' | 'timedout' | 'interrupted'
+    const status = result.status;
     let color = '#36a64f';
     let statusText = 'Playwright Tests Passed';
 
@@ -29,24 +28,23 @@ class SlackReporter implements Reporter {
       statusText = 'Playwright Tests Failed';
     }
 
-    // Trigger GitHub Actions workflow
+    // trigger GitHub Actions workflow
     let actionRunUrl = '';
     let triggerStatus = 'Not Triggered';
     try {
-      console.log('[Slack Reporter] Triggering GitHub Actions workflow via gh CLI...');
+      console.log('[Slack] Triggering GitHub Actions...');
       const output = execSync('gh workflow run playwright.yml').toString();
       const match = output.match(/https:\/\/github\.com\/[^\s]+/);
       if (match) {
         actionRunUrl = match[0];
         triggerStatus = `CI Triggered: <${actionRunUrl}|View Run >`;
-        console.log(`[Slack Reporter] GitHub Actions workflow triggered successfully: ${actionRunUrl}`);
+        console.log(`[Slack] CI triggered: ${actionRunUrl}`);
       } else {
-        triggerStatus = 'Triggered, but URL could not be parsed.';
-        console.log('[Slack Reporter] GitHub Actions workflow triggered, but no URL found in output.');
+        triggerStatus = 'Triggered, URL not parsed.';
       }
     } catch (e) {
-      triggerStatus = 'Failed to trigger via gh CLI.';
-      console.error('[Slack Reporter] Failed to trigger GitHub Actions workflow:', e);
+      triggerStatus = 'Failed to trigger.';
+      console.error('[Slack] CI trigger failed:', e);
     }
 
     const payload = {
@@ -65,7 +63,7 @@ class SlackReporter implements Reporter {
               type: 'section',
               fields: [
                 { type: 'mrkdwn', text: `*Local Status:*\n${status.toUpperCase()}` },
-                { type: 'mrkdwn', text: `*Local Duration:*\n${(result.duration / 1000).toFixed(2)}s` },
+                { type: 'mrkdwn', text: `*Duration:*\n${(result.duration / 1000).toFixed(2)}s` },
                 { type: 'mrkdwn', text: `*GitHub Actions:*\n${triggerStatus}` }
               ]
             }
@@ -75,21 +73,19 @@ class SlackReporter implements Reporter {
     };
 
     try {
-      console.log('[Slack Reporter] Sending local run notification to Slack...');
+      console.log('[Slack] Sending notification...');
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        console.error(`[Slack Reporter] Failed to send notification: ${response.status} ${response.statusText}`);
+        console.error(`[Slack] Failed: ${response.status} ${response.statusText}`);
       } else {
-        console.log('[Slack Reporter] Local run notification sent to Slack successfully.');
+        console.log('[Slack] Notification sent.');
       }
     } catch (error) {
-      console.error('[Slack Reporter] Error sending Slack notification:', error);
+      console.error('[Slack] Error:', error);
     }
   }
 }
