@@ -22,6 +22,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "bddgen": "^1.0.5",
     "mysql2": "^3.22.5"
   }
 }
